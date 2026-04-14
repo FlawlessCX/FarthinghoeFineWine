@@ -4,6 +4,7 @@ import { useState } from "react";
 import { wines, filters } from "./data";
 import type { Wine, WineOffer } from "./data";
 import { MaterialIcon, Header, Footer } from "./components";
+import { ProductModal } from "./product-modal";
 
 function ViewToggle({ currentView, onViewChange }: { currentView: "list" | "grid"; onViewChange: (view: "list" | "grid") => void }) {
   return (
@@ -59,7 +60,7 @@ function HeroBanner() {
   );
 }
 
-function WineGridCard({ wine, priceDisplayMode }: { wine: Wine; priceDisplayMode: "inBond" | "withTax" }) {
+function WineGridCard({ wine, priceDisplayMode, onViewDetails }: { wine: Wine; priceDisplayMode: "inBond" | "withTax"; onViewDetails: (wine: Wine) => void }) {
   return (
     <article className="border border-gray-200 rounded-lg overflow-hidden flex flex-col hover:shadow-lg transition-shadow">
       {/* Wine image container */}
@@ -74,11 +75,6 @@ function WineGridCard({ wine, priceDisplayMode }: { wine: Wine; priceDisplayMode
 
       {/* Content */}
       <div className="p-4 flex flex-col" style={{ fontFamily: "'Helvetica', 'Arial', sans-serif", fontSize: "16px" }}>
-        {/* Price Display Label */}
-        <div className="text-xs text-gray-500 mb-2">
-          {priceDisplayMode === "inBond" ? "In Bond Bottle Price" : "Price Include Tax & Duty"}
-        </div>
-
         {/* Vintage and Name */}
         <a href={`/product/${wine.slug}`} className="hover:underline mb-2">
           <h3
@@ -95,40 +91,50 @@ function WineGridCard({ wine, priceDisplayMode }: { wine: Wine; priceDisplayMode
         </p>
 
         {/* Offers */}
-        <div className="space-y-2 mb-4 min-h-[60px]">
+        <div className="mb-4">
           {wine.offers.map((offer, i) => (
-            <div key={i} className="pb-2 border-b border-gray-200 last:border-b-0 last:pb-0" style={{ fontSize: "14px" }}>
-              <div className="font-medium mb-1" style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
+            <div key={i} className="mb-3" style={{ fontSize: "14px" }}>
+              <div className="font-medium mb-2" style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
                 {offer.caseType}
               </div>
-              <div className="text-gray-700 mb-1" style={{ fontSize: "14px" }}>
-                <span className="font-semibold" style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}>
-                  {offer.pricePerBottle}
-                  {offer.priceSup && offer.priceSup}
-                </span>
-                <span className="ml-1 text-gray-500" style={{ fontSize: "14px" }}>inc VAT per bottle</span>
-              </div>
               {offer.casePrice && (
-                <div className="text-gray-700 mb-1" style={{ fontSize: "14px" }}>
+                <div className="text-gray-700 mb-2" style={{ fontSize: "14px" }}>
                   <span className="font-semibold" style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}>
                     {offer.casePrice}
                     {offer.casePriceSup && offer.casePriceSup}
                   </span>
-                  <span className="ml-1 text-gray-500" style={{ fontSize: "14px" }}>Nett Case Price</span>
+                  <span className="ml-2 text-gray-500" style={{ fontSize: "14px" }}>Case Price</span>
+                </div>
+              )}
+              <div className="text-gray-700 mb-2" style={{ fontSize: "14px" }}>
+                <span className="font-semibold" style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}>
+                  {offer.pricePerBottle}
+                  {offer.priceSup && offer.priceSup}
+                </span>
+                <span className="ml-2 text-gray-500" style={{ fontSize: "14px" }}>Bottle Price</span>
+              </div>
+              {offer.unitsAvailable && (
+                <div className="text-gray-600" style={{ fontSize: "14px" }}>
+                  {offer.unitsAvailable}
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* View Details link */}
-        <a
-          href={`/product/${wine.slug}`}
+        {/* Price Display Label */}
+        <div className="text-xs text-gray-500 mb-3">
+          {priceDisplayMode === "inBond" ? "In Bond Bottle Price" : "Price Include Tax & Duty"}
+        </div>
+
+        {/* View Details button */}
+        <button
+          onClick={() => onViewDetails(wine)}
           className="w-full block px-6 py-2 rounded-full text-white text-sm font-medium transition-colors hover:opacity-90 text-center"
           style={{ backgroundColor: "rgb(21, 33, 64)" }}
         >
           View Details
-        </a>
+        </button>
       </div>
     </article>
   );
@@ -229,7 +235,7 @@ function FilterBar({
   );
 }
 
-function WineOfferRow({ offer, wineSlug, priceDisplayMode }: { offer: WineOffer; wineSlug: string; priceDisplayMode?: "inBond" | "withTax" }) {
+function WineOfferRow({ offer, wine, priceDisplayMode, onViewDetails }: { offer: WineOffer; wine: Wine; priceDisplayMode?: "inBond" | "withTax"; onViewDetails?: (wine: Wine) => void }) {
   return (
     <div className="flex items-center gap-6 mt-auto pt-4 flex-wrap">
       <div className="text-sm" style={{ fontFamily: "'Raleway', sans-serif", color: "#333" }}>
@@ -246,18 +252,18 @@ function WineOfferRow({ offer, wineSlug, priceDisplayMode }: { offer: WineOffer;
         <span className="font-semibold">{offer.casePrice}{offer.casePriceSup && offer.casePriceSup}</span>
         <span className="ml-1 text-gray-500">Nett Case Price</span>
       </div>
-      <a
-        href={`/product/${wineSlug}`}
+      <button
+        onClick={() => onViewDetails?.(wine)}
         className="ml-auto px-6 py-2 rounded-full text-white text-sm font-medium transition-colors hover:opacity-90 inline-block"
         style={{ backgroundColor: "rgb(21, 33, 64)", fontFamily: "'Raleway', sans-serif" }}
       >
         View Details
-      </a>
+      </button>
     </div>
   );
 }
 
-function WineCard({ wine, priceDisplayMode }: { wine: Wine; priceDisplayMode: "inBond" | "withTax" }) {
+function WineCard({ wine, priceDisplayMode, onViewDetails }: { wine: Wine; priceDisplayMode: "inBond" | "withTax"; onViewDetails: (wine: Wine) => void }) {
   return (
     <article className="border-b border-gray-200 py-6 px-6">
       <div className="max-w-[1440px] mx-auto flex gap-6">
@@ -290,15 +296,17 @@ function WineCard({ wine, priceDisplayMode }: { wine: Wine; priceDisplayMode: "i
                 {wine.type} from {wine.region}
               </p>
             </div>
-            <div className="text-xs text-gray-500 whitespace-nowrap ml-4">
-              {priceDisplayMode === "inBond" ? "In Bond Bottle Price" : "Price Include Tax & Duty"}
-            </div>
           </div>
 
           {/* Offers */}
           {wine.offers.map((offer, i) => (
-            <WineOfferRow key={i} offer={offer} wineSlug={wine.slug} priceDisplayMode={priceDisplayMode} />
+            <WineOfferRow key={i} offer={offer} wine={wine} priceDisplayMode={priceDisplayMode} onViewDetails={onViewDetails} />
           ))}
+
+          {/* Price Display Label */}
+          <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+            {priceDisplayMode === "inBond" ? "In Bond Bottle Price" : "Price Include Tax & Duty"}
+          </div>
         </div>
       </div>
     </article>
@@ -578,6 +586,16 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("winery-asc");
   const [selectedFilters, setSelectedFilters] = useState<{ [key: string]: string[] }>({});
   const [priceDisplayMode, setPriceDisplayMode] = useState<"inBond" | "withTax">("inBond");
+  const [selectedWineForModal, setSelectedWineForModal] = useState<Wine | null>(null);
+
+  const handleViewDetails = (wine: Wine) => {
+    setSelectedWineForModal(wine);
+  };
+
+  const handleAddToBasket = (wine: Wine, quantity: number) => {
+    console.log(`Added ${quantity} of ${wine.name} to basket`);
+    setSelectedWineForModal(null);
+  };
 
   const handleFilterChange = (category: string, value: string, checked: boolean) => {
     setSelectedFilters((prev) => {
@@ -698,7 +716,7 @@ export default function Home() {
               // List View
               <section>
                 {sortedWines.map((wine) => (
-                  <WineCard key={wine.slug} wine={wine} priceDisplayMode={priceDisplayMode} />
+                  <WineCard key={wine.slug} wine={wine} priceDisplayMode={priceDisplayMode} onViewDetails={handleViewDetails} />
                 ))}
               </section>
             ) : (
@@ -707,7 +725,7 @@ export default function Home() {
                 <div className="px-6 py-8">
                   <div className="grid grid-cols-3 gap-6">
                     {sortedWines.map((wine) => (
-                      <WineGridCard key={wine.slug} wine={wine} priceDisplayMode={priceDisplayMode} />
+                      <WineGridCard key={wine.slug} wine={wine} priceDisplayMode={priceDisplayMode} onViewDetails={handleViewDetails} />
                     ))}
                   </div>
                 </div>
@@ -717,6 +735,12 @@ export default function Home() {
         </div>
       </main>
       <Footer />
+      <ProductModal
+        wine={selectedWineForModal}
+        isOpen={!!selectedWineForModal}
+        onClose={() => setSelectedWineForModal(null)}
+        onAddToBasket={handleAddToBasket}
+      />
     </div>
   );
 }
