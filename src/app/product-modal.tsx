@@ -1,8 +1,97 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wine } from "./data";
+import { Wine, WineOffer } from "./data";
 import { MaterialIcon } from "./components";
+
+function OfferAddToBasket({
+  offer,
+  wine,
+  onAddToBasket,
+  heading,
+}: {
+  offer: WineOffer;
+  wine: Wine;
+  onAddToBasket: (wine: Wine, offer: WineOffer, quantity: number) => void;
+  heading?: string;
+}) {
+  const [quantity, setQuantity] = useState(1);
+
+  const handleAdd = () => {
+    onAddToBasket(wine, offer, quantity);
+    setQuantity(1);
+  };
+
+  const isSingleBottle = offer.caseType === "Single Bottle";
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3">
+      {heading && (
+        <h3 className="font-semibold text-sm mb-2" style={{ color: "rgb(21, 33, 64)" }}>
+          {heading}
+        </h3>
+      )}
+      {/* Offer pricing */}
+      <div className="mb-3">
+        {!isSingleBottle ? (
+          <>
+            <div style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
+              <span className="font-semibold" style={{ fontSize: "16px" }}>
+                {offer.casePrice}{offer.casePriceSup && offer.casePriceSup}
+              </span>
+              <span className="ml-1">{offer.caseType}</span>
+            </div>
+            <div style={{ color: "rgb(21, 33, 64)", fontSize: "14px", fontWeight: "normal" }}>
+              {offer.pricePerBottle}{offer.priceSup && offer.priceSup} / bottle
+            </div>
+          </>
+        ) : (
+          <div style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
+            <span className="font-semibold" style={{ fontSize: "16px" }}>
+              {offer.pricePerBottle}{offer.priceSup && offer.priceSup}
+            </span>
+            <span className="ml-1">Per Bottle</span>
+          </div>
+        )}
+      </div>
+
+      {/* Quantity and Add to Basket */}
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-600 mb-1">Qty</span>
+          <div className="flex items-center border border-gray-300 rounded">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="px-2 py-1 text-gray-600 hover:bg-gray-100 text-sm"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-10 text-center border-l border-r border-gray-300 py-1 focus:outline-none text-sm"
+              min="1"
+            />
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="px-2 py-1 text-gray-600 hover:bg-gray-100 text-sm"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="flex-1 px-4 py-2 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
+          style={{ backgroundColor: "rgb(21, 33, 64)" }}
+        >
+          Add {isSingleBottle ? "Bottle" : "Case"} to Basket
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function ProductModal({
   wine,
@@ -13,10 +102,8 @@ export function ProductModal({
   wine: Wine | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToBasket: (wine: Wine, quantity: number) => void;
+  onAddToBasket: (wine: Wine, offer: WineOffer, quantity: number) => void;
 }) {
-  const [quantity, setQuantity] = useState(1);
-
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -35,18 +122,14 @@ export function ProductModal({
 
   if (!isOpen || !wine) return null;
 
-  const handleAddClick = () => {
-    onAddToBasket(wine, quantity);
-    setQuantity(1);
-  };
-
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.35)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-lg max-w-[700px] w-full max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-lg shadow-lg max-w-[700px] w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col md:flex-row gap-6 p-6">
@@ -72,7 +155,7 @@ export function ProductModal({
 
             {/* Wine Name and Basics */}
             <h2
-              className="text-2xl font-medium mb-1"
+              className="text-lg font-medium mb-1 pr-8"
               style={{ fontFamily: "'Raleway', sans-serif", color: "rgb(21, 33, 64)" }}
             >
               {wine.vintage} {wine.name}
@@ -93,37 +176,6 @@ export function ProductModal({
               {wine.type} from {wine.region}
             </p>
 
-            {/* Pricing Details */}
-            <div className="border-t border-gray-200 pt-4 mb-4">
-              {wine.offers.length > 0 && (
-                <div>
-                  {wine.offers.map((offer, i) => (
-                    <div key={i} className="mb-3 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0">
-                      <div className="font-medium mb-2" style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
-                        {offer.caseType}
-                      </div>
-                      {offer.casePrice && (
-                        <div className="text-sm mb-1">
-                          <span className="font-semibold" style={{ color: "rgb(21, 33, 64)" }}>
-                            {offer.casePrice}
-                            {offer.casePriceSup && offer.casePriceSup}
-                          </span>
-                          <span className="ml-2 text-gray-500">Case Price</span>
-                        </div>
-                      )}
-                      <div className="text-sm">
-                        <span className="font-semibold" style={{ color: "rgb(21, 33, 64)" }}>
-                          {offer.pricePerBottle}
-                          {offer.priceSup && offer.priceSup}
-                        </span>
-                        <span className="ml-2 text-gray-500">Bottle Price</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Stock Location and Status */}
             <div className="flex items-center gap-4 mb-4 text-sm">
               <div>
@@ -133,39 +185,28 @@ export function ProductModal({
               <div className="text-green-600 font-semibold">In Stock</div>
             </div>
 
-            {/* Quantity Selector and Add Button */}
-            <div className="flex items-center gap-4 mt-auto pt-4 border-t border-gray-200">
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-600 mb-1">Qty</span>
-                <div className="flex items-center border border-gray-300 rounded">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-12 text-center border-l border-r border-gray-300 py-1 focus:outline-none"
-                    min="1"
-                  />
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={handleAddClick}
-                className="flex-1 px-6 py-2 rounded-full text-white font-medium transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "rgb(21, 33, 64)" }}
-              >
-                Add to Basket
-              </button>
+            {/* Offers - each with its own quantity + add to basket */}
+            <div className="flex flex-col gap-3 mt-auto">
+              {/* Single Bottle offers */}
+              {wine.offers.filter(o => o.caseType === "Single Bottle").map((offer, i) => (
+                <OfferAddToBasket
+                  key={`bottle-${i}`}
+                  offer={offer}
+                  wine={wine}
+                  onAddToBasket={onAddToBasket}
+                  heading="Purchase by the Bottle"
+                />
+              ))}
+              {/* Case offers */}
+              {wine.offers.filter(o => o.caseType !== "Single Bottle").map((offer, i) => (
+                <OfferAddToBasket
+                  key={`case-${i}`}
+                  offer={offer}
+                  wine={wine}
+                  onAddToBasket={onAddToBasket}
+                  heading="Purchase by the Case"
+                />
+              ))}
             </div>
           </div>
         </div>

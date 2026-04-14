@@ -74,12 +74,12 @@ function WineGridCard({ wine, priceDisplayMode, onViewDetails }: { wine: Wine; p
       </a>
 
       {/* Content */}
-      <div className="p-4 flex flex-col" style={{ fontFamily: "'Helvetica', 'Arial', sans-serif", fontSize: "16px" }}>
+      <div className="p-4 flex flex-col flex-1" style={{ fontFamily: "'Helvetica', 'Arial', sans-serif", fontSize: "16px" }}>
         {/* Vintage and Name */}
         <a href={`/product/${wine.slug}`} className="hover:underline mb-2">
           <h3
             className="font-medium leading-tight"
-            style={{ color: "rgb(21, 33, 64)", fontSize: "18px" }}
+            style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}
           >
             {wine.vintage} {wine.name}
           </h3>
@@ -91,39 +91,39 @@ function WineGridCard({ wine, priceDisplayMode, onViewDetails }: { wine: Wine; p
         </p>
 
         {/* Offers */}
-        <div className="mb-4">
-          {wine.offers.map((offer, i) => (
-            <div key={i} className="mb-3" style={{ fontSize: "14px" }}>
-              <div className="font-medium mb-2" style={{ color: "rgb(21, 33, 64)", fontSize: "14px" }}>
-                {offer.caseType}
-              </div>
-              {offer.casePrice && (
-                <div className="text-gray-700 mb-2" style={{ fontSize: "14px" }}>
-                  <span className="font-semibold" style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}>
-                    {offer.casePrice}
-                    {offer.casePriceSup && offer.casePriceSup}
-                  </span>
-                  <span className="ml-2 text-gray-500" style={{ fontSize: "14px" }}>Case Price</span>
-                </div>
-              )}
-              <div className="text-gray-700 mb-2" style={{ fontSize: "14px" }}>
-                <span className="font-semibold" style={{ color: "rgb(21, 33, 64)", fontSize: "16px" }}>
-                  {offer.pricePerBottle}
-                  {offer.priceSup && offer.priceSup}
+        <div className="mb-4" style={{ fontSize: "14px", color: "rgb(21, 33, 64)" }}>
+          {/* Case offers */}
+          {wine.offers.filter(o => o.caseType !== "Single Bottle").map((offer, i) => (
+            <div key={i}>
+              {i > 0 && <hr className="border-gray-200 my-2" />}
+              <div className="grid" style={{ gridTemplateColumns: "auto 1fr", gap: "0 6px" }}>
+                <span className="font-semibold" style={{ fontSize: "16px" }}>
+                  {offer.casePrice}{offer.casePriceSup && offer.casePriceSup}
                 </span>
-                <span className="ml-2 text-gray-500" style={{ fontSize: "14px" }}>Bottle Price</span>
+                <span className="self-baseline">{offer.caseType}</span>
+                <span style={{ fontWeight: "normal" }}>
+                  {offer.pricePerBottle}{offer.priceSup && offer.priceSup}
+                </span>
+                <span style={{ fontWeight: "normal" }}>/ bottle</span>
               </div>
-              {offer.unitsAvailable && (
-                <div className="text-gray-600" style={{ fontSize: "14px" }}>
-                  {offer.unitsAvailable}
-                </div>
-              )}
+            </div>
+          ))}
+          {/* Single Bottle offers */}
+          {wine.offers.filter(o => o.caseType === "Single Bottle").map((offer, i) => (
+            <div key={i}>
+              {wine.offers.some(o => o.caseType !== "Single Bottle") && <hr className="border-gray-200 my-2" />}
+              <div className="grid" style={{ gridTemplateColumns: "auto 1fr", gap: "0 6px" }}>
+                <span className="font-semibold" style={{ fontSize: "16px" }}>
+                  {offer.pricePerBottle}{offer.priceSup && offer.priceSup}
+                </span>
+                <span className="self-baseline">Per Bottle</span>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Price Display Label */}
-        <div className="text-xs text-gray-500 mb-3">
+        <div className="text-xs text-gray-500 mb-3 mt-auto">
           {priceDisplayMode === "inBond" ? "In Bond Bottle Price" : "Price Include Tax & Duty"}
         </div>
 
@@ -592,8 +592,8 @@ export default function Home() {
     setSelectedWineForModal(wine);
   };
 
-  const handleAddToBasket = (wine: Wine, quantity: number) => {
-    console.log(`Added ${quantity} of ${wine.name} to basket`);
+  const handleAddToBasket = (wine: Wine, offer: WineOffer, quantity: number) => {
+    console.log(`Added ${quantity} x ${offer.caseType} of ${wine.name} to basket`);
     setSelectedWineForModal(null);
   };
 
